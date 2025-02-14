@@ -42,18 +42,6 @@ namespace ToDoListAPI.Functions.v1
             return response;
         }
 
-        [Function("DeleteChecklist")]
-        [OpenApiOperation(operationId: "DeleteChecklist", tags: new[] { "Checklist" })]
-        [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(Guid), Description = "Checklist ID")]
-        [OpenApiResponseWithoutBody(HttpStatusCode.NoContent, Description = "Checklist deleted")]
-        public HttpResponseData DeleteChecklist(
-            [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "todoList/delete/{id}")] HttpRequestData req, Guid id)
-        {
-            return _service.DeleteList(id)
-                ? req.CreateResponse(HttpStatusCode.NoContent)
-                : req.CreateResponse(HttpStatusCode.NotFound);
-        }
-
         [Function("GetChecklists")]
         [OpenApiOperation(operationId: "GetChecklists", tags: new[] { "Checklist" })]
         [OpenApiResponseWithBody(HttpStatusCode.OK, "application/json", typeof(List<ToDoList>), Description = "List of checklists")]
@@ -65,20 +53,16 @@ namespace ToDoListAPI.Functions.v1
             return response;
         }
 
-        [Function("GetChecklistDetail")]
-        [OpenApiOperation(operationId: "GetChecklistDetail", tags: new[] { "Checklist" })]
+        [Function("DeleteChecklist")]
+        [OpenApiOperation(operationId: "DeleteChecklist", tags: new[] { "Checklist" })]
         [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(Guid), Description = "Checklist ID")]
-        [OpenApiResponseWithBody(HttpStatusCode.OK, "application/json", typeof(ToDoList), Description = "Checklist detail")]
-        public async Task<HttpResponseData> GetChecklistDetail(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "todoList/detail/{id}")] HttpRequestData req, Guid id)
+        [OpenApiResponseWithoutBody(HttpStatusCode.NoContent, Description = "Checklist deleted")]
+        public HttpResponseData DeleteChecklist(
+            [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "todoList/delete/{id}")] HttpRequestData req, Guid id)
         {
-            var checklist = _service.GetListById(id);
-            if (checklist == null)
-                return req.CreateResponse(HttpStatusCode.NotFound);
-
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(checklist);
-            return response;
+            return _service.DeleteList(id)
+                ? req.CreateResponse(HttpStatusCode.NoContent)
+                : req.CreateResponse(HttpStatusCode.NotFound);
         }
 
         [Function("AddItemToChecklist")]
@@ -107,7 +91,7 @@ namespace ToDoListAPI.Functions.v1
         [OpenApiRequestBody("application/json", typeof(ToDoListItemPayload), Description = "Updated item data")]
         [OpenApiResponseWithBody(HttpStatusCode.OK, "application/json", typeof(ToDoList), Description = "Item updated")]
         public async Task<HttpResponseData> UpdateItemInChecklist(
-            [HttpTrigger(AuthorizationLevel.Function, "put", Route = "todoList/update-item/{checklistId}/{itemId}")] HttpRequestData req, Guid checklistId, Guid itemId)
+        [HttpTrigger(AuthorizationLevel.Function, "put", Route = "todoList/update-item/{checklistId}/{itemId}")] HttpRequestData req, Guid checklistId, Guid itemId)
         {
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             var request = JsonConvert.DeserializeObject<ToDoListItemPayload>(requestBody);
@@ -123,23 +107,5 @@ namespace ToDoListAPI.Functions.v1
             return response;
         }
 
-        [Function("UpdateItemStatus")]
-        [OpenApiOperation(operationId: "UpdateItemStatus", tags: new[] { "Checklist Items" })]
-        [OpenApiRequestBody("application/json", typeof(bool), Description = "Updated item status")]
-        [OpenApiResponseWithBody(HttpStatusCode.OK, "application/json", typeof(ToDoList), Description = "Item status updated")]
-        public async Task<HttpResponseData> UpdateItemStatus(
-            [HttpTrigger(AuthorizationLevel.Function, "put", Route = "todoList/update-status/{checklistId}/{itemId}")] HttpRequestData req, Guid checklistId, Guid itemId)
-        {
-            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var isCompleted = JsonConvert.DeserializeObject<bool>(requestBody);
-
-            var checklist = _service.UpdateItemStatus(checklistId, itemId, isCompleted);
-            if (checklist == null)
-                return req.CreateResponse(HttpStatusCode.NotFound);
-
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(checklist);
-            return response;
-        }
     }
 }
